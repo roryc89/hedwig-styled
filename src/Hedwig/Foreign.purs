@@ -3,12 +3,9 @@ module Hedwig.Foreign where
 import Prelude
 
 import Data.Function.Uncurried (Fn1, Fn2, Fn3, Fn4, runFn1, runFn2, runFn3, runFn4)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (Nullable, toMaybe)
-import Data.String (joinWith)
+import Data.Nullable (Nullable)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn3, runEffectFn1, runEffectFn3)
-import Global.Unsafe (unsafeStringify)
 import Web.DOM (Element)
 import Web.Event.Event (Event)
 
@@ -16,21 +13,6 @@ foreign import data Html :: Type -> Type
 
 foreign import data Trait :: Type -> Type
 
-instance showTrait :: Show (Trait msg) where
-  show t = unsafeStringify t
-
-instance eqTrait :: Eq (Trait msg) where
-  eq t1 t2 = show t1 == show t2
-
-foreign import getElementName :: forall msg. Html msg -> String
-foreign import getElementTraits :: forall msg. Html msg -> Array {key :: String, val:: String}
-foreign import getElementChildren :: forall msg. Html msg -> Array (Html msg)
-foreign import getElementText :: forall msg. Html msg ->  Nullable String
-
-getElementTraitsString :: forall msg. Html msg -> String
-getElementTraitsString h = getElementTraits h
-  <#> (\{key:k, val} -> " " <> k <> "=" <> show val)
-  # joinWith ""
 
 foreign import element_ :: forall msg. Fn3 String (Array (Trait msg)) (Array (Html msg)) (Html msg)
 foreign import text_ :: forall msg. Fn1 String (Html msg)
@@ -39,30 +21,6 @@ foreign import lazy_ :: forall msg a. Fn4 String String (a -> Html msg) a (Html 
 
 instance functorHtml :: Functor Html where
   map = runFn2 mapHtml_
-
-instance showHtml :: Show (Html msg) where
-  show html = case toMaybe $ getElementText html of
-    Just t -> t
-    Nothing -> "<"
-      <> getElementName html
-      <> getElementTraitsString html
-      <> ">"
-      <> joinWith "" (map show (getElementChildren html))
-      <> "</"
-      <> getElementName html
-      <> ">"
-
-
-    -- if null
-    --
-    -- show
-    -- { children: getElementChildren html
-    -- , traits: getElementTraits html
-    -- , name : getElementName html
-    -- }
-
-instance eqHtml :: Eq (Html msg) where
-  eq t1 t2 = show t1 == show t2
 
 foreign import attribute_ :: forall msg. Fn2 String String (Trait msg)
 foreign import property_ :: forall msg a. Fn2 String a (Trait msg)

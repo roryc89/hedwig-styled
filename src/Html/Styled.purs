@@ -6,10 +6,11 @@ import Data.Array (filter, nub, null)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
+import Data.Nullable (Nullable, toMaybe)
 import Data.String (joinWith)
 import Debug.Trace (spy)
 import Effect (Effect)
-import Hedwig (Trait, (:>))
+import Hedwig (Html, Trait, (:>))
 import Hedwig as H
 import Hedwig.Element (styleEl)
 
@@ -162,3 +163,28 @@ getStyles _ = []
 
 generateClassName :: Array Style -> String
 generateClassName = show >>> quickHash >>> show >>> (<>) "_"
+
+--
+
+foreign import getElementName :: forall msg. Html msg -> String
+foreign import getElementTraits :: forall msg. Html msg -> Array {key :: String, val:: String}
+foreign import getElementChildren :: forall msg. Html msg -> Array (Html msg)
+foreign import getElementText :: forall msg. Html msg ->  Nullable String
+
+getElementTraitsString :: forall msg. Html msg -> String
+getElementTraitsString h = getElementTraits h
+  <#> (\{key:k, val} -> " " <> (if k == "className" then "class" else k) <> "=" <> show val)
+  # joinWith ""
+
+
+renderHtmlToString :: forall msg. Html msg -> String
+renderHtmlToString html = case toMaybe $ getElementText html of
+    Just t -> t
+    Nothing -> "<"
+      <> getElementName html
+      <> getElementTraitsString html
+      <> ">"
+      <> joinWith "" (map renderHtmlToString (getElementChildren html))
+      <> "</"
+      <> getElementName html
+      <> ">"

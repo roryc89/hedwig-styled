@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Hedwig as H
 import Hedwig.Element (styleEl)
-import Main (PseudoSelector(..), Style(..), button, div, span, toUnstyled)
+import Html.Styled (renderHtmlToString, PseudoSelector(..), Style(..), button, div, span, toUnstyled)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
@@ -18,7 +18,9 @@ main = run [consoleReporter] do
   describe "main" do
     it "should convert styled element with no styles to a Hedwig Html element" do
 
-      toUnstyled (div [] [] [span [] [] []]) `shouldEqual` H.div [] [H.span [] []]
+      renderHtmlToString (toUnstyled (div [] [] [span [] [] []]) )
+        `shouldEqual`
+        renderHtmlToString (H.div [] [H.span [] []])
 
     it "should create a Hedwig Html element from a styled element with a style" do
 
@@ -41,7 +43,7 @@ main = run [consoleReporter] do
     padding:20px;
 }"""
 
-      toUnstyled input `shouldEqual` expectedResult
+      renderHtmlToString (toUnstyled input) `shouldEqual` renderHtmlToString expectedResult
 
     it "should create a Hedwig Html element from a styled element with a multiple styles" do
 
@@ -68,7 +70,7 @@ main = run [consoleReporter] do
     color:blue;
 }"""
 
-      toUnstyled input `shouldEqual` expectedResult
+      renderHtmlToString (toUnstyled input) `shouldEqual` renderHtmlToString expectedResult
 
     it "should not create duplicate classes for duplicate styles" do
 
@@ -91,7 +93,7 @@ main = run [consoleReporter] do
     margin:2rem;
 }"""
 
-      toUnstyled input `shouldEqual` expectedResult
+      renderHtmlToString (toUnstyled input) `shouldEqual` renderHtmlToString expectedResult
 
     it "should create pseudo selector classes for pseudo selector styles" do
 
@@ -115,10 +117,4 @@ main = run [consoleReporter] do
     padding:20px;
 }"""
 
-      toUnstyled input `shouldEqual` expectedResult
-
-
--- styleContent :: String
--- styleContent = """._1351054423 {
---     padding:20px;
--- }"""
+      renderHtmlToString (toUnstyled input) `shouldEqual` renderHtmlToString expectedResult

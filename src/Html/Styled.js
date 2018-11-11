@@ -14,3 +14,34 @@ exports.quickHash = function(str) {
     }
     return hash < 0 ? hash * (-1) : hash;
 }
+
+
+exports.getElementName = function(el){
+  if(typeof el === 'string'){
+    return 'text';
+  };
+  return el[1];
+};
+
+exports.getElementTraits = function(el){
+  if(typeof el === 'string'){
+    return [];
+  }
+  return el[2].map(function(arr){
+    return {key: arr[1], val: arr[2]}
+  });
+};
+
+exports.getElementChildren = function(el){
+  if(typeof el === 'string'){
+    return [];
+  }
+  return el[3];
+};
+
+exports.getElementText = function(el){
+  if(typeof el === 'string'){
+    return el;
+  }
+  return null;
+};
