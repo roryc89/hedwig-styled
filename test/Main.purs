@@ -2,13 +2,19 @@ module Test.Main where
 
 import Prelude hiding (div)
 
+import Data.Array (replicate, (..))
+import Data.DateTime.Instant (unInstant)
+import Data.Functor (mapFlipped)
 import Data.Maybe (Maybe(..))
+import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
+import Effect.Now (now)
 import Hedwig as H
-import Hedwig.Element (styleEl)
-import Html.Styled (renderHtmlToString, PseudoSelector(..), Style(..), button, div, span, toUnstyled)
+import Html.Styled (PseudoSelector(..), Style(..), button, div, renderHtmlToString, span, styleEl, toUnstyled)
 import Test.Spec (describe, it)
-import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (run)
 foreign import neverUse :: String
@@ -118,3 +124,29 @@ main = run [consoleReporter] do
 }"""
 
       renderHtmlToString (toUnstyled input) `shouldEqual` renderHtmlToString expectedResult
+
+    it "should not take too long" do
+
+        (Milliseconds start) <- unInstant <$> liftEffect now
+
+        let
+          input =
+            div
+              []
+              []
+              ( replicate 100 (button [Style (Just Hover) "padding" "20px"] [] [])
+              <> replicate 100 (button [Style Nothing "margin" "3rem"] [] [])
+              <> (mapFlipped (0..100) (\i -> (button [Style Nothing "margin" (show i <> "rem")] [] [])))
+              )
+
+
+        let _ = renderHtmlToString (toUnstyled input)
+
+        (Milliseconds end) <-  unInstant <$> liftEffect now
+
+        let duration = end - start
+
+        log $ show duration
+
+        when (duration > 10.0) $
+          fail ("test took too long. time: " <> show duration)

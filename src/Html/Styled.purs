@@ -8,11 +8,10 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
 import Data.String (joinWith)
-import Debug.Trace (spy)
 import Effect (Effect)
-import Hedwig (Html, Trait, (:>))
+import Hedwig (Html, Trait, element, (:>))
 import Hedwig as H
-import Hedwig.Element (styleEl)
+import Hedwig.Element (Element)
 
 foreign import quickHash :: String -> Int
 
@@ -122,10 +121,8 @@ toUnstyled styledHtml =
     styleContent = getStyles styledHtml
       # filter (not <<< null)
       # nub
-      # spy "styles"
       >>= getClasses
       # joinWith "\n"
-      # spy "styleContent"
 
     styleNode = if styleContent == ""
         then []
@@ -165,6 +162,9 @@ generateClassName :: Array Style -> String
 generateClassName = show >>> quickHash >>> show >>> (<>) "_"
 
 --
+
+styleEl :: forall msg. Element msg
+styleEl = element "style"
 
 foreign import getElementName :: forall msg. Html msg -> String
 foreign import getElementTraits :: forall msg. Html msg -> Array {key :: String, val:: String}
