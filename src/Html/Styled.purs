@@ -1,4 +1,4 @@
-module Main where
+module Html.Styled where
 
 import Prelude
 
