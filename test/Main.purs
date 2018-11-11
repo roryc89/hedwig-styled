@@ -12,7 +12,8 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Now (now)
 import Hedwig as H
-import Html.Styled (PseudoSelector(..), Style(..), button, div, renderHtmlToString, span, styleEl, toUnstyled)
+import Html.PseudoClass (PseudoClass(..))
+import Html.Styled (Style(..), button, div, renderHtmlToString, span, styleEl, toUnstyled)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
@@ -134,9 +135,9 @@ main = run [consoleReporter] do
             div
               []
               []
-              ( replicate 100 (button [Style (Just Hover) "padding" "20px"] [] [])
-              <> replicate 100 (button [Style Nothing "margin" "3rem"] [] [])
-              <> (mapFlipped (0..100) (\i -> (button [Style Nothing "margin" (show i <> "rem")] [] [])))
+              ( replicate 200 (button [Style (Just Hover) "padding" "20px"] [] [])
+              <> replicate 200 (button [Style Nothing "margin" "3rem"] [] [])
+              <> (mapFlipped (0..200) (\i -> (button [Style Nothing "margin" (show i <> "px")] [] [])))
               )
 
 
@@ -146,7 +147,7 @@ main = run [consoleReporter] do
 
         let duration = end - start
 
-        log $ show duration
+        log $ "duration: " <> show duration
 
-        when (duration > 10.0) $
+        when (duration > 50.0) $
           fail ("test took too long. time: " <> show duration)

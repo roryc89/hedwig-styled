@@ -2,7 +2,7 @@ module Html.Styled where
 
 import Prelude
 
-import Data.Array (filter, nub, null)
+import Data.Array (filter, nub, null, snoc)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
@@ -12,6 +12,7 @@ import Effect (Effect)
 import Hedwig (Html, Trait, element, (:>))
 import Hedwig as H
 import Hedwig.Element (Element)
+import Html.PseudoClass (PseudoClass(..), pseudoClassString)
 
 foreign import quickHash :: String -> Int
 
@@ -40,11 +41,6 @@ view model = toUnstyled $
     StyledText (show model),
     button [] [H.onClick Increment] [StyledText "+"]
    ]
- -- H.main [H.id "main"] [
- --    H.button [H.onClick Decrement] [H.text "-"],
- --    H.text (show model),
- --    H.button [H.onClick Increment] [H.text "+"]
- --  ]
 
 main :: Effect Unit
 main = do
@@ -62,11 +58,10 @@ times2 :: Number -> Number
 times2 = multiply 2.0
 
 data Style
-  = Style (Maybe PseudoSelector) String String
-  -- | PseudoStyle PseudoSelector String String
+  = Style (Maybe PseudoClass) String String
 
-getPseudoSelector :: Style -> Maybe PseudoSelector
-getPseudoSelector (Style ps _ _ ) = ps
+getPseudoClass :: Style -> Maybe PseudoClass
+getPseudoClass (Style ps _ _ ) = ps
 
 derive instance genericStyle :: Generic Style _
 
@@ -75,17 +70,6 @@ derive instance eqStyle :: Eq Style
 derive instance ordStyle :: Ord Style
 
 instance showStyle :: Show Style where
-  show = genericShow
-
-data PseudoSelector = Hover | Active
-
-derive instance genericPseudoSelector :: Generic PseudoSelector _
-
-derive instance eqPseudoSelector :: Eq PseudoSelector
-
-derive instance ordPseudoSelector :: Ord PseudoSelector
-
-instance showPseudoSelector :: Show PseudoSelector where
   show = genericShow
 
 data StyledHtml msg
@@ -131,7 +115,7 @@ toUnstyled styledHtml =
     go (StyledHtml name_ styles_ traits_ children_) =
         H.element
           name_
-          (if null styles_ then traits_ else traits_ <> [ H.class' (generateClassName styles_) ])
+          (if null styles_ then traits_ else snoc traits_ (H.class' (generateClassName styles_)))
           (map go children_)
 
     go (StyledText str) = H.text str
@@ -139,11 +123,62 @@ toUnstyled styledHtml =
 getClasses :: Array Style -> Array String
 getClasses styles =
     (if null noPseudo then [] else [getClassString classSelector noPseudo])
-    <> (if null hover then [] else [getClassString (classSelector <> ":hover") hover])
+    <> (getPseudoClassString Active)
+    <> (getPseudoClassString Blank)
+    <> (getPseudoClassString Checked)
+    <> (getPseudoClassString Default)
+    <> (getPseudoClassString Defined)
+    <> (getPseudoClassString Dir)
+    <> (getPseudoClassString Disabled)
+    <> (getPseudoClassString Empty)
+    <> (getPseudoClassString Enabled)
+    <> (getPseudoClassString First)
+    <> (getPseudoClassString FirstChild)
+    <> (getPseudoClassString FirstOfType)
+    <> (getPseudoClassString Focus)
+    <> (getPseudoClassString FocusVisible)
+    <> (getPseudoClassString FocusWithin)
+    <> (getPseudoClassString Host)
+    <> (getPseudoClassString Hover)
+    <> (getPseudoClassString Indeterminate)
+    <> (getPseudoClassString InRange)
+    <> (getPseudoClassString Invalid)
+    <> (getPseudoClassString Lang)
+    <> (getPseudoClassString LastChild)
+    <> (getPseudoClassString LastOfType)
+    <> (getPseudoClassString Left)
+    <> (getPseudoClassString Link)
+    <> (getPseudoClassString Matches)
+    <> (getPseudoClassString Not)
+    <> (getPseudoClassString NthChild)
+    <> (getPseudoClassString NthLastChild)
+    <> (getPseudoClassString NthLastOfType)
+    <> (getPseudoClassString NthOfType)
+    <> (getPseudoClassString OnlyChild)
+    <> (getPseudoClassString OnlyOfType)
+    <> (getPseudoClassString Optional)
+    <> (getPseudoClassString OutOfRange)
+    <> (getPseudoClassString ReadOnly)
+    <> (getPseudoClassString ReadWrite)
+    <> (getPseudoClassString Required)
+    <> (getPseudoClassString Right)
+    <> (getPseudoClassString Root)
+    <> (getPseudoClassString Scope)
+    <> (getPseudoClassString Target)
+    <> (getPseudoClassString Valid)
+    <> (getPseudoClassString Visited)
     where
       classSelector = "." <> generateClassName styles
-      noPseudo = filter (getPseudoSelector >>> eq Nothing) styles
-      hover = filter (getPseudoSelector >>> eq (Just Hover)) styles
+      noPseudo = filter (getPseudoClass >>> eq Nothing) styles
+
+      getPseudoClassString pseudo =
+        if null pseudoStyles
+          then []
+          else [getClassString (classSelector <> ":" <> pseudoClassString pseudo) pseudoStyles]
+        where
+          pseudoStyles = filter (getPseudoClass >>> eq (Just pseudo)) styles
+
+
 
 
 getClassString :: String -> Array Style -> String
@@ -175,7 +210,6 @@ getElementTraitsString :: forall msg. Html msg -> String
 getElementTraitsString h = getElementTraits h
   <#> (\{key:k, val} -> " " <> (if k == "className" then "class" else k) <> "=" <> show val)
   # joinWith ""
-
 
 renderHtmlToString :: forall msg. Html msg -> String
 renderHtmlToString html = case toMaybe $ getElementText html of
