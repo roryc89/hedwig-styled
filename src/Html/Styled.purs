@@ -8,57 +8,31 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
 import Data.String (joinWith)
-import Effect (Effect)
-import Hedwig (Html, Trait, element, (:>))
+import Data.Tuple (Tuple(..))
+import Hedwig (Html, Trait, element)
 import Hedwig as H
 import Hedwig.Element (Element)
-import Html.PseudoClass (PseudoClass(..), pseudoClassString)
+import Html.Styled.PseudoClass (PseudoClass(..), pseudoClassString)
 
 foreign import quickHash :: String -> Int
 
-type Model = Int
-
-init :: Model
-init = 0
-
-data Msg = Increment | Decrement
-
-update :: Model -> Msg -> Model
-update model = case _ of
-  Increment -> model + 1
-  Decrement -> model - 1
-
-view :: Model -> H.Html Msg
-view model = toUnstyled $
- div [Style Nothing "margin" "auto"] []
-   [ button
-     [ Style Nothing "color" "red"
-     , Style (Just Hover) "color" "blue"
-     ]
-     []
-     [ StyledText "helllloooo" ],
-    button [] [H.onClick Decrement] [StyledText "-"],
-    StyledText (show model),
-    button [] [H.onClick Increment] [StyledText "+"]
-   ]
-
-main :: Effect Unit
-main = do
-  H.mount "main" {
-    init: init :> [],
-    update: \msg model -> update msg model :> [],
-    view
-  }
-
-
-multiply :: Number -> Number -> Number
-multiply x y = x * y
-
-times2 :: Number -> Number
-times2 = multiply 2.0
-
 data Style
   = Style (Maybe PseudoClass) String String
+
+style :: String -> String -> Style
+style = Style Nothing
+
+styles :: Array (Tuple String String) -> Array Style
+styles = map \(Tuple key val) -> style key val
+
+pseudo :: PseudoClass -> String -> String -> Style
+pseudo = Style <<< Just
+
+pseudos :: PseudoClass -> Array (Tuple String String) -> Array Style
+pseudos pCl = map \(Tuple key val) -> pseudo pCl key val
+
+hovers :: Array (Tuple String String) -> Array Style
+hovers = pseudos Hover
 
 getPseudoClass :: Style -> Maybe PseudoClass
 getPseudoClass (Style ps _ _ ) = ps
@@ -78,24 +52,15 @@ data StyledHtml msg
 
 derive instance genericStyledHtml :: Generic (StyledHtml msg) _
 
-button :: forall msg. Array Style -> Array (Trait msg) -> Array (StyledHtml msg) -> StyledHtml msg
-button = StyledHtml "button"
-
-div :: forall msg. Array Style -> Array (Trait msg) -> Array (StyledHtml msg) -> StyledHtml msg
-div = StyledHtml "div"
-
-span :: forall msg. Array Style -> Array (Trait msg) -> Array (StyledHtml msg) -> StyledHtml msg
-span = StyledHtml "span"
-
 toUnstyled :: forall msg. StyledHtml msg -> H.Html msg
 toUnstyled styledHtml =
 
   case styledHtml of
-   StyledHtml name styles traits children ->
+   StyledHtml name styles_ traits children ->
 
       H.element
         name
-        (if null styles then traits else traits <> [H.class' (generateClassName styles)])
+        (if null styles_ then traits else traits <> [H.class' (generateClassName styles_)])
         (styleNode <> map go children)
 
    StyledText str ->
@@ -121,7 +86,7 @@ toUnstyled styledHtml =
     go (StyledText str) = H.text str
 
 getClasses :: Array Style -> Array String
-getClasses styles =
+getClasses styles_ =
     (if null noPseudo then [] else [getClassString classSelector noPseudo])
     <> (getPseudoClassString Active)
     <> (getPseudoClassString Checked)
@@ -147,29 +112,26 @@ getClasses styles =
     <> (getPseudoClassString Valid)
     <> (getPseudoClassString Visited)
     where
-      classSelector = "." <> generateClassName styles
-      noPseudo = filter (getPseudoClass >>> eq Nothing) styles
+      classSelector = "." <> generateClassName styles_
+      noPseudo = filter (getPseudoClass >>> eq Nothing) styles_
 
-      getPseudoClassString pseudo =
+      getPseudoClassString pseudo_ =
         if null pseudoStyles
           then []
-          else [getClassString (classSelector <> ":" <> pseudoClassString pseudo) pseudoStyles]
+          else [getClassString (classSelector <> ":" <> pseudoClassString pseudo_) pseudoStyles]
         where
-          pseudoStyles = filter (getPseudoClass >>> eq (Just pseudo)) styles
-
-
-
+          pseudoStyles = filter (getPseudoClass >>> eq (Just pseudo_)) styles_
 
 getClassString :: String -> Array Style -> String
-getClassString selector styles = selector <> """ {
+getClassString selector styles_ = selector <> """ {
 """ <> stylesString <> """
 }"""
   where
-    stylesString = map (\(Style _ key val) -> "    " <> key <> ":" <> val <> ";") styles
+    stylesString = map (\(Style _ key val) -> "    " <> key <> ":" <> val <> ";") styles_
        # joinWith "\n"
 
 getStyles :: forall msg. StyledHtml msg -> Array (Array Style)
-getStyles (StyledHtml _ styles _ children) = [styles] <> bind children getStyles
+getStyles (StyledHtml _ styles_ _ children) = [styles_] <> bind children getStyles
 getStyles _ = []
 
 generateClassName :: Array Style -> String

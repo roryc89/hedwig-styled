@@ -1,4 +1,4 @@
-module Html.PseudoClass where
+module Html.Styled.PseudoClass where
 
 import Prelude
 
@@ -31,7 +31,7 @@ data PseudoClass
   | Visited
 
 pseudoClassString :: PseudoClass -> String
-pseudoClassString p = case p of
+pseudoClassString = case _ of
   Active -> "active"
   Checked -> "checked"
   Disabled -> "disabled"

@@ -11,13 +11,16 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Now (now)
+import Hedwig ((:>))
 import Hedwig as H
-import Html.PseudoClass (PseudoClass(..))
-import Html.Styled (Style(..), button, div, renderHtmlToString, span, styleEl, toUnstyled)
+import Html.Styled.PseudoClass (PseudoClass(..))
+import Html.Styled (Style(..), hovers, renderHtmlToString, styleEl, styles, toUnstyled)
+import Html.Styled.Element as S
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (run)
+
 foreign import neverUse :: String
 
 main :: Effect Unit
@@ -25,7 +28,7 @@ main = run [consoleReporter] do
   describe "main" do
     it "should convert styled element with no styles to a Hedwig Html element" do
 
-      renderHtmlToString (toUnstyled (div [] [] [span [] [] []]) )
+      renderHtmlToString (toUnstyled (S.div [] [] [S.span [] [] []]) )
         `shouldEqual`
         renderHtmlToString (H.div [] [H.span [] []])
 
@@ -33,10 +36,10 @@ main = run [consoleReporter] do
 
       let
         input =
-          div
+          S.div
             []
             []
-            [ button [Style Nothing "padding" "20px"] [] []
+            [ S.button (styles ["padding" :> "20px"]) [] []
             ]
 
         expectedResult =
@@ -56,10 +59,10 @@ main = run [consoleReporter] do
 
       let
         input =
-          div
-            [Style Nothing "margin" "2rem"]
+          S.div
+            (styles ["margin" :> "2rem"])
             []
-            [ button [Style Nothing "padding" "20px", Style Nothing "color" "blue"] [] []
+            [ S.button (styles ["padding" :> "20px", "color" :> "blue"]) [] []
             ]
 
         expectedResult =
@@ -83,15 +86,15 @@ main = run [consoleReporter] do
 
       let
         input =
-          div
-            [Style Nothing "margin" "2rem"]
+          S.div
+            (styles ["margin" :> "2rem"])
             []
-            [ button [Style Nothing "margin" "2rem"] [] []
+            [ S.button (styles ["margin" :> "2rem"]) [] []
             ]
 
         expectedResult =
           H.div
-            [H.class' "_1127099563"]
+            [ H.class' "_1127099563" ]
             [ styleEl [] [H.text styleContent]
             , H.button [H.class' "_1127099563"] []
             ]
@@ -107,10 +110,10 @@ main = run [consoleReporter] do
 
       let
         input =
-          div
+          S.div
             []
             []
-            [ button [Style (Just Hover) "padding" "20px"] [] []
+            [ S.button (hovers ["padding" :> "20px"]) [] []
             ]
 
         expectedResult =
@@ -132,12 +135,12 @@ main = run [consoleReporter] do
 
         let
           input =
-            div
+            S.div
               []
               []
-              ( replicate 200 (button [Style (Just Hover) "padding" "20px"] [] [])
-              <> replicate 200 (button [Style Nothing "margin" "3rem"] [] [])
-              <> (mapFlipped (0..200) (\i -> (button [Style Nothing "margin" (show i <> "px")] [] [])))
+              ( replicate 200 (S.button [Style (Just Hover) "padding" "20px"] [] [])
+              <> replicate 200 (S.button [Style Nothing "margin" "3rem"] [] [])
+              <> (mapFlipped (0..200) (\i -> (S.button [Style Nothing "margin" (show i <> "px")] [] [])))
               )
 
 
